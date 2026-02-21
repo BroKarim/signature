@@ -4,18 +4,18 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
 
 
 ## 0. Foundation
-- [ ] Tentukan stack final (Next.js App Router + React + Framer Motion).✅
-- [ ] Pastikan dependensi utama tersedia: `motion`, `clsx`, `tailwind` (jika dipakai).✅
-- [ ] Buat struktur folder:✅
+- [x] Tentukan stack final (Next.js App Router + React + Framer Motion).✅
+- [x] Pastikan dependensi utama tersedia: `motion`, `clsx`, `tailwind` (jika dipakai).✅
+- [x] Buat struktur folder:✅
   - `app/` untuk halaman
   - `components/` untuk UI + canvas
   - `lib/` untuk util (smoothing, velocity, export)
-- [ ] Tetapkan target browser minimum:✅
+- [x] Tetapkan target browser minimum:✅
   - Desktop: Chrome/Edge terbaru, Firefox terbaru, Safari terbaru.
   - Mobile: iOS Safari terbaru, Chrome Android terbaru.
 
 ## 1. Landing + Canvas Responsif
-- [ ] Buat layout landing dengan area canvas pusat.✅
+- [ x] Buat layout landing dengan area canvas pusat.✅
 - [x] Canvas full-width, tinggi adaptif, tidak merusak layout pada mobile.✅
 - [x] Tambahkan responsif landscape hint di mobile (opsional).✅
 - [x] Tambahkan kontrol dasar: `Clear`, `Replay`.✅
@@ -45,19 +45,19 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
 
 ## 5. Live Preview + Replay
 - [x] Implement replay animasi stroke-berurutan.
-- [ ] Gunakan urutan penggambaran (per stroke).
-- [ ] Tombol `Replay` mereset lalu animasi ulang.
+- [x] Gunakan urutan penggambaran (per stroke).
+- [x] Tombol `Replay` mereset lalu animasi ulang.
 - [ ] Pastikan preview cocok dengan hasil ekspor.
 
 ## 6. Export -> React Motion Component
-- [ ] Konversi data stroke ke `path` SVG.
-- [ ] Generate `tsx` component dengan `motion.path`.
-- [ ] Animasi `pathLength` dari 0 -> 1 per stroke.
-- [ ] Respect settings: duration, easing, thickness, color.
-- [ ] Panel kode menampilkan output yang rapi.
+- [x] Konversi data stroke ke `path` SVG.
+- [x] Generate `tsx` component dengan `motion.path`.
+- [x] Animasi `pathLength` dari 0 -> 1 per stroke.
+- [x] Respect settings: duration, easing, thickness, color.
+- [x] Panel kode menampilkan output yang rapi.
 
 ## 7. Copy + Download
-- [ ] Tombol `Copy Code` (clipboard).
+- [x] Tombol `Copy Code` (clipboard).
 - [ ] Tombol `Download .tsx`.
 - [ ] Pastikan output konsisten dengan preview.
 

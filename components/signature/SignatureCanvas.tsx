@@ -30,6 +30,7 @@ function toLocalPoint(
 
 type SignatureCanvasProps = {
   ghostEnabled?: boolean;
+  onStrokeEnd?: (strokes: Stroke[]) => void;
 };
 
 export type SignatureCanvasHandle = {
@@ -38,7 +39,7 @@ export type SignatureCanvasHandle = {
 };
 
 const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
-  ({ ghostEnabled = false }, ref) => {
+  ({ ghostEnabled = false, onStrokeEnd }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const isDrawingRef = useRef(false);
@@ -52,6 +53,11 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       replayTokenRef.current += 1;
       isReplayingRef.current = false;
     };
+
+    const cloneStrokes = () =>
+      strokesRef.current.map((stroke) => ({
+        points: stroke.points.map((point) => ({ ...point })),
+      }));
 
     const drawSegment = (
       ctx: CanvasRenderingContext2D,
@@ -117,9 +123,15 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
-          const strokes = strokesRef.current.map((stroke) => ({
-            points: stroke.points.slice(),
-          }));
+          const strokes = strokesRef.current
+            .map((stroke) => ({
+              points: stroke.points.slice(),
+            }))
+            .sort((a, b) => {
+              const at = a.points[0]?.t ?? 0;
+              const bt = b.points[0]?.t ?? 0;
+              return at - bt;
+            });
 
           if (strokes.length === 0) return;
 
@@ -264,6 +276,9 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       isDrawingRef.current = false;
       currentStrokeRef.current = null;
       canvas.releasePointerCapture(event.pointerId);
+      if (onStrokeEnd) {
+        onStrokeEnd(cloneStrokes());
+      }
     };
 
     return (
