@@ -44,7 +44,7 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
 - [ ] Simpan state UI terpisah dari data stroke.
 
 ## 5. Live Preview + Replay
-- [ ] Implement replay animasi stroke-berurutan.
+- [x] Implement replay animasi stroke-berurutan.
 - [ ] Gunakan urutan penggambaran (per stroke).
 - [ ] Tombol `Replay` mereset lalu animasi ulang.
 - [ ] Pastikan preview cocok dengan hasil ekspor.

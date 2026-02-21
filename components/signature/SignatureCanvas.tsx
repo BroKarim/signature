@@ -34,6 +34,7 @@ type SignatureCanvasProps = {
 
 export type SignatureCanvasHandle = {
   clear: () => void;
+  replay: () => void;
 };
 
 const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
@@ -41,9 +42,60 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const isDrawingRef = useRef(false);
+    const isReplayingRef = useRef(false);
+    const replayTokenRef = useRef(0);
     const strokesRef = useRef<Stroke[]>([]);
     const currentStrokeRef = useRef<Stroke | null>(null);
     const lastMidpointRef = useRef<{ x: number; y: number } | null>(null);
+
+    const cancelReplay = () => {
+      replayTokenRef.current += 1;
+      isReplayingRef.current = false;
+    };
+
+    const drawSegment = (
+      ctx: CanvasRenderingContext2D,
+      lastPoint: Point,
+      point: Point,
+      lastMidpoint: { x: number; y: number } | null
+    ) => {
+      const mid = midpoint(lastPoint, point);
+      const velocityFactor = Math.min(point.v / VELOCITY_MAX, 1);
+      const width = MAX_WIDTH - (MAX_WIDTH - MIN_WIDTH) * velocityFactor;
+
+      const drawCurve = (offsetX = 0, offsetY = 0) => {
+        ctx.beginPath();
+        if (lastMidpoint) {
+          ctx.moveTo(lastMidpoint.x + offsetX, lastMidpoint.y + offsetY);
+          ctx.quadraticCurveTo(
+            lastPoint.x + offsetX,
+            lastPoint.y + offsetY,
+            mid.x + offsetX,
+            mid.y + offsetY
+          );
+        } else {
+          ctx.moveTo(lastPoint.x + offsetX, lastPoint.y + offsetY);
+          ctx.lineTo(mid.x + offsetX, mid.y + offsetY);
+        }
+        ctx.stroke();
+      };
+
+      if (ghostEnabled) {
+        ctx.save();
+        ctx.strokeStyle = GHOST_COLOR;
+        ctx.globalAlpha = 0.2;
+        ctx.lineWidth = width + 1.6;
+        drawCurve(0.6, 0.8);
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = LINE_COLOR;
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = width;
+      drawCurve();
+
+      return mid;
+    };
 
     useImperativeHandle(
       ref,
@@ -57,6 +109,73 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
           strokesRef.current = [];
           currentStrokeRef.current = null;
           lastMidpointRef.current = null;
+          cancelReplay();
+        },
+        replay: () => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          const strokes = strokesRef.current.map((stroke) => ({
+            points: stroke.points.slice(),
+          }));
+
+          if (strokes.length === 0) return;
+
+          cancelReplay();
+          isReplayingRef.current = true;
+          const token = replayTokenRef.current;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const playStroke = (stroke: Stroke) =>
+            new Promise<void>((resolve) => {
+              if (stroke.points.length < 2) {
+                resolve();
+                return;
+              }
+
+              const points = stroke.points;
+              const baseTime = points[0].t;
+              const times = points.map((point) => point.t - baseTime);
+              const startTime = performance.now();
+              let index = 1;
+              let lastMidpoint: { x: number; y: number } | null = null;
+
+              const step = () => {
+                if (token !== replayTokenRef.current) {
+                  resolve();
+                  return;
+                }
+
+                const elapsed = performance.now() - startTime;
+
+                while (index < points.length && times[index] <= elapsed) {
+                  const lastPoint = points[index - 1];
+                  const point = points[index];
+                  lastMidpoint = drawSegment(ctx, lastPoint, point, lastMidpoint);
+                  index += 1;
+                }
+
+                if (index >= points.length) {
+                  resolve();
+                  return;
+                }
+
+                requestAnimationFrame(step);
+              };
+
+              requestAnimationFrame(step);
+            });
+
+          (async () => {
+            for (const stroke of strokes) {
+              if (token !== replayTokenRef.current) return;
+              await playStroke(stroke);
+            }
+            isReplayingRef.current = false;
+          })();
         },
       }),
       []
@@ -98,6 +217,7 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       if (!canvas) return;
 
       canvas.setPointerCapture(event.pointerId);
+      cancelReplay();
       isDrawingRef.current = true;
       lastMidpointRef.current = null;
 
@@ -134,41 +254,7 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       if (!ctx) return;
       const lastPoint = stroke.points[stroke.points.length - 2];
       if (!lastPoint) return;
-      const mid = midpoint(lastPoint, point);
-      const velocityFactor = Math.min(point.v / VELOCITY_MAX, 1);
-      const width = MAX_WIDTH - (MAX_WIDTH - MIN_WIDTH) * velocityFactor;
-
-      const drawSegment = (offsetX = 0, offsetY = 0) => {
-        ctx.beginPath();
-        if (lastMidpointRef.current) {
-          ctx.moveTo(lastMidpointRef.current.x + offsetX, lastMidpointRef.current.y + offsetY);
-          ctx.quadraticCurveTo(
-            lastPoint.x + offsetX,
-            lastPoint.y + offsetY,
-            mid.x + offsetX,
-            mid.y + offsetY
-          );
-        } else {
-          ctx.moveTo(lastPoint.x + offsetX, lastPoint.y + offsetY);
-          ctx.lineTo(mid.x + offsetX, mid.y + offsetY);
-        }
-        ctx.stroke();
-      };
-
-      if (ghostEnabled) {
-        ctx.save();
-        ctx.strokeStyle = GHOST_COLOR;
-        ctx.globalAlpha = 0.2;
-        ctx.lineWidth = width + 1.6;
-        drawSegment(0.6, 0.8);
-        ctx.restore();
-      }
-
-      ctx.strokeStyle = LINE_COLOR;
-      ctx.globalAlpha = 1;
-      ctx.lineWidth = width;
-      drawSegment();
-      lastMidpointRef.current = mid;
+      lastMidpointRef.current = drawSegment(ctx, lastPoint, point, lastMidpointRef.current);
     };
 
     const endStroke = (event: React.PointerEvent<HTMLCanvasElement>) => {

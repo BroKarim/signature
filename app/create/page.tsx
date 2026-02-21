@@ -40,6 +40,7 @@ export default function CreatePage() {
               </button>
               <button
                 type="button"
+                onClick={() => canvasRef.current?.replay()}
                 className="rounded-full border border-transparent bg-[#37322F] px-3 py-1.5 text-xs font-medium text-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] transition hover:bg-[#2C2826]"
               >
                 Replay
