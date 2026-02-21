@@ -21,17 +21,17 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
 - [x] Tambahkan kontrol dasar: `Clear`, `Replay`.✅
 
 ## 2. Capture Input (Mouse + Touch)
-- [ ] Implement pointer events pada canvas.
-- [ ] Rekam titik `(x, y, t)` real-time.
-- [ ] Hitung velocity antar titik.
-- [ ] Simpan data stroke per-segmen: `{points: Point[]}`.
-- [ ] Pastikan tidak ada lag pada high-frequency input.
+- [x] Implement pointer events pada canvas.
+- [x] Rekam titik `(x, y, t)` real-time.
+- [x] Hitung velocity antar titik.
+- [x] Simpan data stroke per-segmen: `{points: Point[]}`.
+- [x] Pastikan tidak ada lag pada high-frequency input.
 
 ## 3. Rendering Stroke Halus (Ink Simulation)
-- [ ] Implement smoothing (misalnya Catmull-Rom / Bezier).
-- [ ] Gunakan pressure berdasarkan velocity (lebih cepat = lebih tipis).
-- [ ] Render preview stroke real-time di canvas.
-- [ ] Tambahkan opsi "Ghost Effect" (layer tinta samar di bawah).
+- [x] Implement smoothing (misalnya Catmull-Rom / Bezier).
+- [x] Gunakan pressure berdasarkan velocity (lebih cepat = lebih tipis). => ini kkenya bermaslah, g usah aja
+- [x] Render preview stroke real-time di canvas.
+- [x] Tambahkan opsi "Ghost Effect" (layer tinta samar di bawah).
 
 ## 4. Sidebar Refinement
 - [ ] Panel kontrol kanan/kiri:

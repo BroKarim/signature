@@ -1,4 +1,13 @@
+"use client";
+
+import { useRef, useState } from "react";
+
+import SignatureCanvas, { type SignatureCanvasHandle } from "@/components/signature/SignatureCanvas";
+
 export default function CreatePage() {
+  const [ghostEnabled, setGhostEnabled] = useState(true);
+  const canvasRef = useRef<SignatureCanvasHandle | null>(null);
+
   return (
     <div className="min-h-screen w-full bg-[#F7F5F3] text-[#2F3037]">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 py-10 sm:px-6 md:px-8">
@@ -10,13 +19,21 @@ export default function CreatePage() {
         </div>
 
         <div className="flex w-full flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="text-xs font-medium uppercase tracking-[0.16em] text-[rgba(49,45,43,0.65)]">
               Canvas
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => setGhostEnabled((prev) => !prev)}
+                className="rounded-full border border-[rgba(55,50,47,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[#37322F] shadow-[0px_1px_2px_rgba(55,50,47,0.10)] transition hover:bg-white/90"
+              >
+                Ghost {ghostEnabled ? "On" : "Off"}
+              </button>
+              <button
+                type="button"
+                onClick={() => canvasRef.current?.clear()}
                 className="rounded-full border border-[rgba(55,50,47,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[#37322F] shadow-[0px_1px_2px_rgba(55,50,47,0.10)] transition hover:bg-white/90"
               >
                 Clear
@@ -32,9 +49,7 @@ export default function CreatePage() {
 
           <div className="relative w-full overflow-hidden rounded-2xl border border-[rgba(55,50,47,0.12)] bg-white/70 shadow-[0px_6px_22px_rgba(55,50,47,0.10)]">
             <div className="relative aspect-[16/9] w-full min-h-[320px] sm:aspect-[21/9] sm:min-h-[360px]">
-              <div className="absolute inset-0 flex items-center justify-center text-sm text-[rgba(49,45,43,0.60)]">
-                Canvas placeholder
-              </div>
+              <SignatureCanvas ref={canvasRef} ghostEnabled={ghostEnabled} />
             </div>
           </div>
 
