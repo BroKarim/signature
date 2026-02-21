@@ -15,10 +15,10 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
   - Mobile: iOS Safari terbaru, Chrome Android terbaru.
 
 ## 1. Landing + Canvas Responsif
-- [ ] Buat layout landing dengan area canvas pusat.
-- [ ] Canvas full-width, tinggi adaptif, tidak merusak layout pada mobile.
-- [ ] Tambahkan responsif landscape hint di mobile (opsional).
-- [ ] Tambahkan kontrol dasar: `Clear`, `Replay`.
+- [ ] Buat layout landing dengan area canvas pusat.✅
+- [x] Canvas full-width, tinggi adaptif, tidak merusak layout pada mobile.✅
+- [x] Tambahkan responsif landscape hint di mobile (opsional).✅
+- [x] Tambahkan kontrol dasar: `Clear`, `Replay`.✅
 
 ## 2. Capture Input (Mouse + Touch)
 - [ ] Implement pointer events pada canvas.
