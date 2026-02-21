@@ -92,5 +92,16 @@ export function generateMotionComponent(
     })
     .join("\n");
 
-  return ` import { motion } from "motion/react"; export function ${componentName}() { return ( <svg viewBox="${viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg"> ${pathLines} </svg> ); } `;
+  return [
+    `import { motion } from "motion/react";`,
+    ``,
+    `export function ${componentName}() {`,
+    `  return (`,
+    `    <svg viewBox="${viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg">`,
+    pathLines,
+    `    </svg>`,
+    `  );`,
+    `}`,
+    ``,
+  ].join("\n");
 }

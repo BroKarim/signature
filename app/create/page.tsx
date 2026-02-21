@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import SignatureCanvas, { type SignatureCanvasHandle } from "@/components/signature/SignatureCanvas";
+import CodePreview from "@/components/CodePreview";
 import { generateMotionComponent } from "@/lib/signature/export";
 import type { Stroke } from "@/lib/signature/types";
 
@@ -134,9 +135,7 @@ export default function CreatePage() {
               )}
             </button>
           </div>
-          <pre className="mt-3 max-h-[320px] overflow-auto rounded-xl bg-[#1C1A19] p-4 text-[12px] leading-5 text-[#F7F5F3]">
-            <code>{codeOutput || "// Draw a signature to generate code."}</code>
-          </pre>
+          <CodePreview code={codeOutput} placeholder="// Draw a signature to generate code." />
         </div>
       </div>
     </div>
