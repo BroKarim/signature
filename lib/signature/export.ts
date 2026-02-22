@@ -61,10 +61,15 @@ export function getBounds(points: Point[]): SignatureBounds | null {
 export type MotionExportOptions = {
   componentName?: string;
   strokeColor?: string;
+  baseStrokeColor?: string;
+  baseStrokeOpacity?: number;
   strokeWidth?: number;
   duration?: number;
   easing?: string;
+  animationMode?: AnimationMode;
 };
+
+export type AnimationMode = "draw" | "fill";
 
 export function generateMotionComponent(
   strokes: Stroke[],
@@ -79,6 +84,9 @@ export function generateMotionComponent(
   const strokeWidth = options.strokeWidth ?? 2.2;
   const duration = options.duration ?? 2.6;
   const easing = options.easing ?? "easeOut";
+  const animationMode = options.animationMode ?? "draw";
+  const baseStrokeColor = options.baseStrokeColor ?? "#6E665F";
+  const baseStrokeOpacity = options.baseStrokeOpacity ?? 0.45;
 
   const viewBox = bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
 
@@ -88,7 +96,14 @@ export function generateMotionComponent(
     .map((path, index) => {
       const delay = (perStroke * index).toFixed(3);
       const dur = perStroke.toFixed(3);
-      return `      <motion.path\n        d=\"${path}\"\n        fill=\"none\"\n        stroke=\"${strokeColor}\"\n        strokeWidth={${strokeWidth}}\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n        initial={{ pathLength: 0 }}\n        animate={{ pathLength: 1 }}\n        transition={{ duration: ${dur}, ease: \"${easing}\", delay: ${delay} }}\n      />`;
+      const base = `      <path\n        d=\"${path}\"\n        fill=\"none\"\n        stroke=\"${baseStrokeColor}\"\n        strokeWidth={${strokeWidth}}\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n        strokeOpacity={${baseStrokeOpacity}}\n      />`;
+      const animated = `      <motion.path\n        d=\"${path}\"\n        fill=\"none\"\n        stroke=\"${strokeColor}\"\n        strokeWidth={${strokeWidth}}\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n        initial={{ pathLength: 0 }}\n        animate={{ pathLength: 1 }}\n        transition={{ duration: ${dur}, ease: \"${easing}\", delay: ${delay} }}\n      />`;
+
+      if (animationMode === "fill") {
+        return [base, animated].join("\n");
+      }
+
+      return animated;
     })
     .join("\n");
 
