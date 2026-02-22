@@ -1,26 +1,22 @@
 import type { Point, Stroke } from "@/lib/signature/types";
 import { midpoint } from "@/lib/signature/smoothing";
 
+// ─── Path Helpers ────────────────────────────────────────────────────────────
+
 function pointToString(point: { x: number; y: number }): string {
   return `${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
 }
 
 export function strokeToPath(stroke: Stroke): string {
-  const points = stroke.points;
+  const { points } = stroke;
   if (points.length === 0) return "";
+  if (points.length === 1) return `M ${pointToString(points[0])}`;
 
-  if (points.length === 1) {
-    return `M ${pointToString(points[0])}`;
-  }
-
-  const first = points[0];
-  const second = points[1];
-  let d = `M ${pointToString(first)}`;
-
+  const [first, second] = points;
   const firstMid = midpoint(first, second);
-  d += ` L ${pointToString(firstMid)}`;
+  let d = `M ${pointToString(first)} L ${pointToString(firstMid)}`;
 
-  for (let i = 1; i < points.length - 1; i += 1) {
+  for (let i = 1; i < points.length - 1; i++) {
     const current = points[i];
     const next = points[i + 1];
     const mid = midpoint(current, next);
@@ -31,8 +27,10 @@ export function strokeToPath(stroke: Stroke): string {
 }
 
 export function strokesToPaths(strokes: Stroke[]): string[] {
-  return strokes.map(strokeToPath).filter((path) => path.length > 0);
+  return strokes.map(strokeToPath).filter((p) => p.length > 0);
 }
+
+// ─── Bounds ──────────────────────────────────────────────────────────────────
 
 export type SignatureBounds = {
   minX: number;
@@ -43,20 +41,22 @@ export type SignatureBounds = {
 
 export function getBounds(points: Point[]): SignatureBounds | null {
   if (points.length === 0) return null;
-  let minX = points[0].x;
-  let maxX = points[0].x;
-  let minY = points[0].y;
-  let maxY = points[0].y;
-
-  for (const point of points) {
-    if (point.x < minX) minX = point.x;
-    if (point.x > maxX) maxX = point.x;
-    if (point.y < minY) minY = point.y;
-    if (point.y > maxY) maxY = point.y;
+  let minX = points[0].x,
+    maxX = points[0].x;
+  let minY = points[0].y,
+    maxY = points[0].y;
+  for (const { x, y } of points) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
   }
-
   return { minX, minY, maxX, maxY };
 }
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export type AnimationMode = "draw" | "fill";
 
 export type MotionExportOptions = {
   componentName?: string;
@@ -69,54 +69,149 @@ export type MotionExportOptions = {
   animationMode?: AnimationMode;
 };
 
-export type AnimationMode = "draw" | "fill";
+// ─── Per-stroke timing (cumulative delays) ───────────────────────────────────
+//
+// Each stroke gets a duration proportional to its point count (longer strokes
+// take more time). Delays are cumulative so strokes animate sequentially,
+// exactly like the reference implementation.
 
-export function generateMotionComponent(
-  strokes: Stroke[],
-  options: MotionExportOptions = {}
-): string {
-  const paths = strokesToPaths(strokes);
-  const points = strokes.flatMap((stroke) => stroke.points);
-  const bounds = getBounds(points);
+function buildStrokeTiming(paths: string[], strokes: Stroke[], totalDuration: number): Array<{ duration: number; delay: number }> {
+  const lengths = strokes.map((s) => Math.max(s.points.length - 1, 1));
+  const totalLength = lengths.reduce((a, b) => a + b, 0);
 
-  const componentName = options.componentName ?? "SignatureMotion";
-  const strokeColor = options.strokeColor ?? "#2C2826";
-  const strokeWidth = options.strokeWidth ?? 2.2;
-  const duration = options.duration ?? 2.6;
-  const easing = options.easing ?? "easeOut";
-  const animationMode = options.animationMode ?? "draw";
-  const baseStrokeColor = options.baseStrokeColor ?? "#6E665F";
-  const baseStrokeOpacity = options.baseStrokeOpacity ?? 0.45;
+  const durations = lengths.map((len) => (len / totalLength) * totalDuration);
 
-  const viewBox = bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
+  const delays = durations.reduce<number[]>((acc, _, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + durations[i - 1]);
+    return acc;
+  }, []);
 
-  const perStroke = paths.length > 0 ? duration / paths.length : duration;
+  return paths.map((_, i) => ({
+    duration: durations[i] ?? totalDuration / paths.length,
+    delay: delays[i] ?? 0,
+  }));
+}
 
+// ─── Code Generators ─────────────────────────────────────────────────────────
+
+function generateDrawMode(paths: string[], timing: Array<{ duration: number; delay: number }>, opts: Required<MotionExportOptions>, viewBox: string): string {
   const pathLines = paths
-    .map((path, index) => {
-      const delay = (perStroke * index).toFixed(3);
-      const dur = perStroke.toFixed(3);
-      const base = `      <path\n        d=\"${path}\"\n        fill=\"none\"\n        stroke=\"${baseStrokeColor}\"\n        strokeWidth={${strokeWidth}}\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n        strokeOpacity={${baseStrokeOpacity}}\n      />`;
-      const animated = `      <motion.path\n        d=\"${path}\"\n        fill=\"none\"\n        stroke=\"${strokeColor}\"\n        strokeWidth={${strokeWidth}}\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n        initial={{ pathLength: 0 }}\n        animate={{ pathLength: 1 }}\n        transition={{ duration: ${dur}, ease: \"${easing}\", delay: ${delay} }}\n      />`;
-
-      if (animationMode === "fill") {
-        return [base, animated].join("\n");
-      }
-
-      return animated;
+    .map((path, i) => {
+      const { duration, delay } = timing[i];
+      return [
+        `      <motion.path`,
+        `        d="${path}"`,
+        `        fill="none"`,
+        `        stroke="${opts.strokeColor}"`,
+        `        strokeWidth={${opts.strokeWidth}}`,
+        `        strokeLinecap="round"`,
+        `        strokeLinejoin="round"`,
+        `        initial={{ pathLength: 0, opacity: 0 }}`,
+        `        animate={{ pathLength: 1, opacity: 1 }}`,
+        `        transition={{`,
+        `          pathLength: { duration: ${duration.toFixed(3)}, ease: "${opts.easing}", delay: ${delay.toFixed(3)} },`,
+        `          opacity: { duration: 0.01, delay: ${delay.toFixed(3)} },`,
+        `        }}`,
+        `      />`,
+      ].join("\n");
     })
     .join("\n");
 
   return [
     `import { motion } from "motion/react";`,
     ``,
-    `export function ${componentName}() {`,
+    `export function ${opts.componentName}() {`,
     `  return (`,
-    `    <svg viewBox="${viewBox}" fill="none" xmlns="http://www.w3.org/2000/svg">`,
+    `    <motion.svg`,
+    `      viewBox="${viewBox}"`,
+    `      fill="none"`,
+    `      xmlns="http://www.w3.org/2000/svg"`,
+    `    >`,
     pathLines,
-    `    </svg>`,
+    `    </motion.svg>`,
     `  );`,
     `}`,
     ``,
   ].join("\n");
+}
+
+function generateFillMode(paths: string[], timing: Array<{ duration: number; delay: number }>, opts: Required<MotionExportOptions>, viewBox: string): string {
+  // Fill mode: ghost/indent base layer (plain <path>) rendered first,
+  // then motion.path on top animates pathLength 0 → 1 sequentially.
+  const pathLines = paths
+    .map((path, i) => {
+      const { duration, delay } = timing[i];
+      return [
+        `      {/* stroke ${i + 1} — base (ink indent) */}`,
+        `      <path`,
+        `        d="${path}"`,
+        `        fill="none"`,
+        `        stroke="${opts.baseStrokeColor}"`,
+        `        strokeWidth={${opts.strokeWidth}}`,
+        `        strokeLinecap="round"`,
+        `        strokeLinejoin="round"`,
+        `        strokeOpacity={${opts.baseStrokeOpacity}}`,
+        `      />`,
+        `      {/* stroke ${i + 1} — animated fill */}`,
+        `      <motion.path`,
+        `        d="${path}"`,
+        `        fill="none"`,
+        `        stroke="${opts.strokeColor}"`,
+        `        strokeWidth={${opts.strokeWidth}}`,
+        `        strokeLinecap="round"`,
+        `        strokeLinejoin="round"`,
+        `        initial={{ pathLength: 0, opacity: 0 }}`,
+        `        animate={{ pathLength: 1, opacity: 1 }}`,
+        `        transition={{`,
+        `          pathLength: { duration: ${duration.toFixed(3)}, ease: "${opts.easing}", delay: ${delay.toFixed(3)} },`,
+        `          opacity: { duration: 0.01, delay: ${delay.toFixed(3)} },`,
+        `        }}`,
+        `      />`,
+      ].join("\n");
+    })
+    .join("\n");
+
+  return [
+    `import { motion } from "motion/react";`,
+    ``,
+    `export function ${opts.componentName}() {`,
+    `  return (`,
+    `    <motion.svg`,
+    `      viewBox="${viewBox}"`,
+    `      fill="none"`,
+    `      xmlns="http://www.w3.org/2000/svg"`,
+    `    >`,
+    pathLines,
+    `    </motion.svg>`,
+    `  );`,
+    `}`,
+    ``,
+  ].join("\n");
+}
+
+// ─── Main Export ─────────────────────────────────────────────────────────────
+
+export function generateMotionComponent(strokes: Stroke[], options: MotionExportOptions = {}): string {
+  const paths = strokesToPaths(strokes);
+  const allPoints = strokes.flatMap((s) => s.points);
+  const bounds = getBounds(allPoints);
+
+  const opts: Required<MotionExportOptions> = {
+    componentName: options.componentName ?? "SignatureMotion",
+    strokeColor: options.strokeColor ?? "#2C2826",
+    baseStrokeColor: options.baseStrokeColor ?? "#6E665F",
+    baseStrokeOpacity: options.baseStrokeOpacity ?? 0.45,
+    strokeWidth: options.strokeWidth ?? 2.2,
+    duration: options.duration ?? 2.6,
+    easing: options.easing ?? "easeOut",
+    animationMode: options.animationMode ?? "draw",
+  };
+
+  const viewBox = bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
+
+  if (paths.length === 0) return "";
+
+  const timing = buildStrokeTiming(paths, strokes, opts.duration);
+
+  return opts.animationMode === "fill" ? generateFillMode(paths, timing, opts, viewBox) : generateDrawMode(paths, timing, opts, viewBox);
 }
