@@ -1,19 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createHighlighter } from "shiki";
 
-let highlighterPromise: ReturnType<typeof createHighlighter> | null = null;
-
-const getHighlighter = () => {
-  if (!highlighterPromise) {
-    highlighterPromise = createHighlighter({
-      themes: ["ayu-dark"],
-      langs: ["tsx"],
-    });
-  }
-  return highlighterPromise;
-};
+import { highlightCode } from "@/lib/highlight-code";
 
 type CodePreviewProps = {
   code: string;
@@ -29,16 +18,13 @@ export default function CodePreview({ code, placeholder, className }: CodePrevie
     const content = code || placeholder || "";
 
     (async () => {
-      const highlighter = await getHighlighter();
-      const rendered = highlighter.codeToHtml(content, {
-        lang: "tsx",
-        theme: "ayu-dark",
-      });
-      const normalized = rendered
-        .replace('<pre class="shiki"', '<pre class="shiki min-w-full"')
-        .replace('style="', 'style="margin:0;background-color:transparent;');
+      if (!content) {
+        if (active) setHtml("");
+        return;
+      }
+      const rendered = await highlightCode(content, "tsx");
       if (active) {
-        setHtml(normalized);
+        setHtml(rendered);
       }
     })();
 
@@ -51,7 +37,7 @@ export default function CodePreview({ code, placeholder, className }: CodePrevie
     return (
       <pre
         className={[
-          "mt-3 max-h-[320px] overflow-auto rounded-xl border  p-4 text-[12px] leading-5 text-[#F7F5F3]",
+          "mt-3 min-h-0 overflow-auto rounded-xl  p-4 text-[12px] leading-5 text-[#F7F5F3]",
           className,
         ]
           .filter(Boolean)
@@ -65,13 +51,16 @@ export default function CodePreview({ code, placeholder, className }: CodePrevie
   return (
     <div
       className={[
-        "mt-3  overflow-auto rounded-xl border p-4",
+        "mt-3 min-h-0 no-scrollbar overflow-hidden rounded-xl border  ",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="text-[12px] leading-5" dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        className="h-full overflow-auto [&>pre]:h-full [&>pre]:overflow-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   );
 }
