@@ -7,8 +7,8 @@ import type { Point, Stroke } from "@/lib/signature/types";
 import { midpoint } from "@/lib/signature/smoothing";
 import { withVelocity } from "@/lib/signature/velocity";
 
-const LINE_COLOR = "#2C2826";
-const GHOST_COLOR = "#1C1A19";
+const LINE_COLOR = "#F7F5F3";
+const GHOST_COLOR = "#F7F5F3";
 const MIN_WIDTH = 1.2;
 const MAX_WIDTH = 3.6;
 const VELOCITY_MAX = 2.5;
@@ -283,14 +283,7 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
 
     return (
       <div ref={containerRef} className="relative h-full w-full">
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 h-full w-full touch-none"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={endStroke}
-          onPointerCancel={endStroke}
-        />
+        <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none bg-[#1a1a1a]" onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={endStroke} onPointerCancel={endStroke} />
       </div>
     );
   }

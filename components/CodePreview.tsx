@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { highlightCode } from "@/lib/highlight-code";
 
 type CodePreviewProps = {
