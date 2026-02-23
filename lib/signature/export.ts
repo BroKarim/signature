@@ -201,7 +201,7 @@ export function generateMotionComponent(strokes: Stroke[], options: MotionExport
     strokeColor: options.strokeColor ?? "#2C2826",
     baseStrokeColor: options.baseStrokeColor ?? "#6E665F",
     baseStrokeOpacity: options.baseStrokeOpacity ?? 0.45,
-    strokeWidth: options.strokeWidth ?? 2.2,
+    strokeWidth: options.strokeWidth ?? 1.6,
     duration: options.duration ?? 2.6,
     easing: options.easing ?? "easeOut",
     animationMode: options.animationMode ?? "draw",

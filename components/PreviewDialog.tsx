@@ -24,7 +24,7 @@ import { motion } from "motion/react";
 const STROKE_COLOR = "#F7F5F3";
 const BASE_STROKE_COLOR = "#6E665F";
 const BASE_STROKE_OPACITY = 0.45;
-const STROKE_WIDTH = 2.2;
+const STROKE_WIDTH = 1.6;
 const DURATION = 2.6;
 const EASING = "easeOut";
 

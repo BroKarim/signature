@@ -8,12 +8,11 @@ import { midpoint } from "@/lib/signature/smoothing";
 import { withVelocity } from "@/lib/signature/velocity";
 
 const LINE_COLOR = "#F7F5F3";
-const GHOST_COLOR = "#F7F5F3";
 const FILL_BASE_COLOR = "#6E665F";
-const MIN_WIDTH = 1.2;
-const MAX_WIDTH = 3.6;
-const VELOCITY_MAX = 2.5;
-const MIN_DISTANCE = 0.35;
+const MIN_WIDTH = 0.9;
+const MAX_WIDTH = 2.4;
+const VELOCITY_MAX = 3.2;
+const MIN_DISTANCE = 0.25;
 const FILL_BASE_OPACITY = 0.45;
 
 function toLocalPoint(
@@ -31,7 +30,6 @@ function toLocalPoint(
 }
 
 type SignatureCanvasProps = {
-  ghostEnabled?: boolean;
   animationMode?: "draw" | "fill";
   onStrokeEnd?: (strokes: Stroke[]) => void;
 };
@@ -42,7 +40,7 @@ export type SignatureCanvasHandle = {
 };
 
 const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
-  ({ ghostEnabled = false, animationMode = "draw", onStrokeEnd }, ref) => {
+  ({ animationMode = "draw", onStrokeEnd }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const isDrawingRef = useRef(false);
@@ -67,7 +65,7 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       lastPoint: Point,
       point: Point,
       lastMidpoint: { x: number; y: number } | null,
-      options: { lineColor: string; ghost: boolean; opacity: number }
+      options: { lineColor: string; opacity: number }
     ) => {
       const mid = midpoint(lastPoint, point);
       const velocityFactor = Math.min(point.v / VELOCITY_MAX, 1);
@@ -90,15 +88,6 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
         ctx.stroke();
       };
 
-      if (options.ghost) {
-        ctx.save();
-        ctx.strokeStyle = GHOST_COLOR;
-        ctx.globalAlpha = 0.2;
-        ctx.lineWidth = width + 1.6;
-        drawCurve(0.6, 0.8);
-        ctx.restore();
-      }
-
       ctx.strokeStyle = options.lineColor;
       ctx.globalAlpha = options.opacity;
       ctx.lineWidth = width;
@@ -119,7 +108,6 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
         const point = stroke.points[i];
         lastMidpoint = drawSegment(ctx, lastPoint, point, lastMidpoint, {
           lineColor: FILL_BASE_COLOR,
-          ghost: false,
           opacity,
         });
       }
@@ -195,7 +183,6 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
                   const point = points[index];
                   lastMidpoint = drawSegment(ctx, lastPoint, point, lastMidpoint, {
                     lineColor: LINE_COLOR,
-                    ghost: false,
                     opacity: 1,
                   });
                   index += 1;
@@ -221,7 +208,7 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
           })();
         },
       }),
-      [animationMode, ghostEnabled]
+      [animationMode]
     );
 
     useEffect(() => {
@@ -299,7 +286,6 @@ const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(
       if (!lastPoint) return;
       lastMidpointRef.current = drawSegment(ctx, lastPoint, point, lastMidpointRef.current, {
         lineColor: LINE_COLOR,
-        ghost: ghostEnabled,
         opacity: 1,
       });
     };

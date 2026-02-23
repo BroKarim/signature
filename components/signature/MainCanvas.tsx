@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import SignatureCanvas, { type SignatureCanvasHandle } from "@/components/signature/SignatureCanvas";
 
 export default function MainCanvas() {
-  const [ghostEnabled, setGhostEnabled] = useState(true);
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
 
   return (
@@ -15,13 +14,6 @@ export default function MainCanvas() {
           Canvas
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setGhostEnabled((prev) => !prev)}
-            className="rounded-full border border-[rgba(55,50,47,0.18)] bg-white px-3 py-1.5 text-xs font-medium text-[#37322F] shadow-[0px_1px_2px_rgba(55,50,47,0.10)] transition hover:bg-white/90"
-          >
-            Ghost {ghostEnabled ? "On" : "Off"}
-          </button>
           <button
             type="button"
             onClick={() => canvasRef.current?.clear()}
@@ -40,7 +32,7 @@ export default function MainCanvas() {
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden border-none rounded-2xl p-4 sm:p-8">
         <div className="relative h-full w-full">
-          <SignatureCanvas ref={canvasRef} ghostEnabled={ghostEnabled} />
+          <SignatureCanvas ref={canvasRef} />
         </div>
       </div>
 

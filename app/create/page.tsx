@@ -11,7 +11,6 @@ import { generateMotionComponent, type AnimationMode } from "@/lib/signature/exp
 import type { Stroke } from "@/lib/signature/types";
 
 export default function CreatePage() {
-  const [ghostEnabled, setGhostEnabled] = useState(true);
   const [animationMode, setAnimationMode] = useState<AnimationMode>("draw");
   const canvasRef = useRef<SignatureCanvasHandle | null>(null);
   const [copied, setCopied] = useState(false);
@@ -25,7 +24,7 @@ export default function CreatePage() {
       strokeColor: "#F7F5F3",
       baseStrokeColor: "#6E665F",
       baseStrokeOpacity: 0.45,
-      strokeWidth: 2.2,
+      strokeWidth: 1.6,
       duration: 2.6,
       easing: "easeOut",
       animationMode,
@@ -75,9 +74,6 @@ export default function CreatePage() {
           <div className="flex items-center justify-between gap-4">
             <CanvasHeader mode={animationMode} onModeChange={setAnimationMode} />
             <div className="flex items-center gap-2">
-              <Button type="button" onClick={() => setGhostEnabled((prev) => !prev)} variant="outline" size="xs" className="rounded-full px-3 text-xs shadow-[0px_1px_2px_rgba(0,0,0,0.25)]">
-                Ghost {ghostEnabled ? "On" : "Off"}
-              </Button>
               <Button type="button" onClick={handleClear} variant="outline" size="xs" className="rounded-full px-3 text-xs shadow-[0px_1px_2px_rgba(0,0,0,0.25)]">
                 Clear
               </Button>
@@ -89,7 +85,7 @@ export default function CreatePage() {
 
           <div className="relative w-full overflow-hidden rounded-2xl border border-border bg-card/70 shadow-[0px_6px_22px_rgba(0,0,0,0.35)]">
             <div className="relative aspect-video w-full min-h-[320px] sm:aspect-[21/9] sm:min-h-[360px]">
-              <SignatureCanvas ref={canvasRef} ghostEnabled={ghostEnabled} animationMode={animationMode} onStrokeEnd={handleStrokeEnd} />
+              <SignatureCanvas ref={canvasRef} animationMode={animationMode} onStrokeEnd={handleStrokeEnd} />
             </div>
           </div>
 
