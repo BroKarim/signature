@@ -128,6 +128,8 @@ function generateDrawMode(paths: string[], timing: Array<{ duration: number; del
     .join("\n");
 
   return [
+    `"use client";`,
+    ``,
     `import { motion } from "motion/react";`,
     ``,
     `export function ${opts.componentName}() {`,
@@ -182,6 +184,8 @@ function generateFillMode(paths: string[], timing: Array<{ duration: number; del
     .join("\n");
 
   return [
+    `"use client";`,
+    ``,
     `import { motion } from "motion/react";`,
     ``,
     `export function ${opts.componentName}() {`,
@@ -239,6 +243,8 @@ function generateFillTextMode(paths: string[], opts: Required<MotionExportOption
     .join("\n");
 
   return [
+    `"use client";`,
+    ``,
     `import { motion } from "motion/react";`,
     ``,
     `export function ${opts.componentName}() {`,
