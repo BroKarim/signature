@@ -61,6 +61,23 @@ Goal: Website untuk menggambar tanda tangan lalu mengekspor komponen React (Fram
 - [ ] Tombol `Download .tsx`.
 - [ ] Pastikan output konsisten dengan preview.
 
+# Phase 7: Type-to-Signature Feature (Font-to-SVG)
+
+## Task 7.1: Opentype.js Integration
+- [ ] Install `opentype.js` dan `@types/opentype.js`.
+- [ ] Buat helper `loadSignatureFont(fontName)` untuk fetch file .ttf dari public folder.
+- [ ] Buat fungsi `convertTextToPaths(text, fontName)` yang mengembalikan array string `d`.
+
+## Task 7.2: Font Bounds Calculation
+- [ ] Karena font tidak memiliki koordinat canvas, buat logika untuk menghitung `viewBox` berdasarkan path yang dihasilkan opentype.js agar tetap responsif.
+
+## Task 7.3: Unified Generator
+- [ ] Refactor `generateMotionComponent` agar bisa menerima parameter `paths: string[]` secara langsung (untuk mode Type) atau mengonversi `strokes` dulu (untuk mode Draw).
+
+## Task 7.4: UI Mode Switcher
+- [ ] Buat tab switcher di `CreatePage`.
+- [ ] Implementasi Input Text dengan Live Preview. Saat user mengetik, animasi signature langsung terupdate secara real-time.
+
 ## 8. Quality & Performance
 - [ ] Debounce render di input cepat (jika perlu).
 - [ ] Memoize hasil smoothing.

@@ -92,6 +92,15 @@ function buildStrokeTiming(paths: string[], strokes: Stroke[], totalDuration: nu
   }));
 }
 
+function buildPathTiming(paths: string[], totalDuration: number): Array<{ duration: number; delay: number }> {
+  if (paths.length === 0) return [];
+  const per = totalDuration / paths.length;
+  return paths.map((_, i) => ({
+    duration: per,
+    delay: per * i,
+  }));
+}
+
 // ─── Code Generators ─────────────────────────────────────────────────────────
 
 function generateDrawMode(paths: string[], timing: Array<{ duration: number; delay: number }>, opts: Required<MotionExportOptions>, viewBox: string): string {
@@ -213,5 +222,27 @@ export function generateMotionComponent(strokes: Stroke[], options: MotionExport
 
   const timing = buildStrokeTiming(paths, strokes, opts.duration);
 
+  return opts.animationMode === "fill" ? generateFillMode(paths, timing, opts, viewBox) : generateDrawMode(paths, timing, opts, viewBox);
+}
+
+export function generateMotionComponentFromPaths(
+  paths: string[],
+  viewBox: string,
+  options: MotionExportOptions = {}
+): string {
+  if (paths.length === 0) return "";
+
+  const opts: Required<MotionExportOptions> = {
+    componentName: options.componentName ?? "SignatureMotion",
+    strokeColor: options.strokeColor ?? "#2C2826",
+    baseStrokeColor: options.baseStrokeColor ?? "#6E665F",
+    baseStrokeOpacity: options.baseStrokeOpacity ?? 0.45,
+    strokeWidth: options.strokeWidth ?? 1.6,
+    duration: options.duration ?? 2.6,
+    easing: options.easing ?? "easeOut",
+    animationMode: options.animationMode ?? "draw",
+  };
+
+  const timing = buildPathTiming(paths, opts.duration);
   return opts.animationMode === "fill" ? generateFillMode(paths, timing, opts, viewBox) : generateDrawMode(paths, timing, opts, viewBox);
 }

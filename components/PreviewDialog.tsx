@@ -8,7 +8,9 @@ import { type AnimationMode } from "@/lib/signature/export";
 import type { Stroke } from "@/lib/signature/types";
 
 type PreviewDialogProps = {
-  strokes: Stroke[];
+  strokes?: Stroke[];
+  paths?: string[];
+  viewBox?: string;
   animationMode: AnimationMode;
   disabled?: boolean;
 };
@@ -42,18 +44,38 @@ function buildStrokeTiming(count: number, strokes: Stroke[], totalDuration: numb
   }));
 }
 
-function LivePreview({ strokes, animationMode, replayKey }: { strokes: Stroke[]; animationMode: AnimationMode; replayKey: number }) {
-  const paths = strokesToPaths(strokes);
-  const allPoints = strokes.flatMap((s) => s.points);
-  const bounds = getBounds(allPoints);
+function buildPathTiming(count: number, totalDuration: number): Array<{ duration: number; delay: number }> {
+  if (count === 0) return [];
+  const per = totalDuration / count;
+  return Array.from({ length: count }, (_, i) => ({
+    duration: per,
+    delay: per * i,
+  }));
+}
 
-  const viewBox = bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
+type LivePreviewProps = {
+  strokes?: Stroke[];
+  paths?: string[];
+  viewBox?: string;
+  animationMode: AnimationMode;
+  replayKey: number;
+};
 
-  const timing = buildStrokeTiming(paths.length, strokes, DURATION);
+function LivePreview({ strokes, paths, viewBox, animationMode, replayKey }: LivePreviewProps) {
+  const resolvedPaths = paths ?? (strokes ? strokesToPaths(strokes) : []);
+  const resolvedViewBox = viewBox ?? (() => {
+    const allPoints = strokes ? strokes.flatMap((s) => s.points) : [];
+    const bounds = getBounds(allPoints);
+    return bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
+  })();
+
+  const timing = strokes
+    ? buildStrokeTiming(resolvedPaths.length, strokes, DURATION)
+    : buildPathTiming(resolvedPaths.length, DURATION);
 
   return (
-    <motion.svg key={replayKey} viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      {paths.map((path, i) => {
+    <motion.svg key={replayKey} viewBox={resolvedViewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+      {resolvedPaths.map((path, i) => {
         const { duration, delay } = timing[i];
         return (
           <g key={i}>
@@ -79,7 +101,7 @@ function LivePreview({ strokes, animationMode, replayKey }: { strokes: Stroke[];
   );
 }
 
-export function PreviewDialog({ strokes, animationMode, disabled }: PreviewDialogProps) {
+export function PreviewDialog({ strokes = [], paths, viewBox, animationMode, disabled }: PreviewDialogProps) {
   const [open, setOpen] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
 
@@ -110,7 +132,11 @@ export function PreviewDialog({ strokes, animationMode, disabled }: PreviewDialo
         </DialogHeader>
 
         <div className="flex min-h-[240px] items-center justify-center rounded-xl border border-border bg-card/70 p-6 shadow-inner">
-          {strokes.length > 0 ? <LivePreview strokes={strokes} animationMode={animationMode} replayKey={replayKey} /> : <p className="text-xs text-muted-foreground">No signature to preview.</p>}
+          {(paths?.length ?? 0) > 0 || strokes.length > 0 ? (
+            <LivePreview strokes={strokes} paths={paths} viewBox={viewBox} animationMode={animationMode} replayKey={replayKey} />
+          ) : (
+            <p className="text-xs text-muted-foreground">No signature to preview.</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
