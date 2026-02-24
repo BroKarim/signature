@@ -11,59 +11,50 @@ type TypePreviewProps = {
   replayKey: number;
 };
 
-const STROKE_COLOR = "#F7F5F3";
-const BASE_STROKE_COLOR = "#6E665F";
-const BASE_STROKE_OPACITY = 0.45;
-const STROKE_WIDTH = 1.6;
-const DURATION = 2.6;
+const FILL_COLOR = "#F7F5F3";
+const BASE_FILL_COLOR = "#6E665F";
+const BASE_FILL_OPACITY = 0.45;
+const DURATION = 4.0;
 const EASING = "easeOut";
 
-function buildPathTiming(count: number, totalDuration: number) {
-  if (count === 0) return [];
-  const per = totalDuration / count;
-  return Array.from({ length: count }, (_, i) => ({
-    duration: per,
-    delay: per * i,
-  }));
+function parseViewBox(viewBox: string) {
+  const [x, y, w, h] = viewBox.split(/\s+/).map((v) => Number.parseFloat(v));
+  return {
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+    w: Number.isFinite(w) ? w : 300,
+    h: Number.isFinite(h) ? h : 120,
+  };
 }
 
 export default function TypePreview({ paths, viewBox, animationMode, replayKey }: TypePreviewProps) {
-  const timing = buildPathTiming(paths.length, DURATION);
+  const { x, y, w, h } = parseViewBox(viewBox);
+  const maskId = `type-mask-${replayKey}`;
 
   return (
     <motion.svg key={replayKey} viewBox={viewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      {paths.map((path, i) => {
-        const { duration, delay } = timing[i] ?? { duration: DURATION, delay: 0 };
-        return (
-          <g key={i}>
-            {animationMode === "fill" && (
-              <path
-                d={path}
-                fill="none"
-                stroke={BASE_STROKE_COLOR}
-                strokeWidth={STROKE_WIDTH}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeOpacity={BASE_STROKE_OPACITY}
-              />
-            )}
-            <motion.path
-              d={path}
-              fill="none"
-              stroke={STROKE_COLOR}
-              strokeWidth={STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{
-                pathLength: { duration, ease: EASING, delay },
-                opacity: { duration: 0.01, delay },
-              }}
-            />
-          </g>
-        );
-      })}
+      <mask id={maskId}>
+        <rect x={x} y={y} width={w} height={h} fill="black" />
+        <motion.rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          fill="white"
+          initial={{ width: 0 }}
+          animate={{ width: w }}
+          transition={{ duration: DURATION, ease: EASING }}
+        />
+      </mask>
+      {animationMode === "fill" &&
+        paths.map((path, i) => (
+          <path key={`base-${i}`} d={path} fill={BASE_FILL_COLOR} fillOpacity={BASE_FILL_OPACITY} />
+        ))}
+      <g mask={`url(#${maskId})`}>
+        {paths.map((path, i) => (
+          <path key={`fill-${i}`} d={path} fill={FILL_COLOR} />
+        ))}
+      </g>
     </motion.svg>
   );
 }

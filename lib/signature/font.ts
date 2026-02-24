@@ -3,7 +3,7 @@ import * as opentype from "opentype.js";
 
 const FONT_FILES: Record<string, string> = {
   BrittanySignature: "/fonts/BrittanySignature.ttf",
-  AmsterdamSignature: "/fonts/AmsterdamSignature.ttf",
+  AmsterdamSignature: "/fonts/Amsterdam Signature.ttf",
 };
 
 const fontCache = new Map<string, Promise<Font>>();

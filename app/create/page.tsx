@@ -33,14 +33,17 @@ export default function CreatePage() {
       baseStrokeColor: "#6E665F",
       baseStrokeOpacity: 0.45,
       strokeWidth: 1.6,
-      duration: 2.6,
+      duration: 4.0,
       easing: "easeOut",
       animationMode,
     };
 
     if (inputMode === "type") {
       if (typePaths.length === 0) return "";
-      return generateMotionComponentFromPaths(typePaths, typeViewBox, baseOptions);
+      return generateMotionComponentFromPaths(typePaths, typeViewBox, {
+        ...baseOptions,
+        renderStyle: "fill",
+      });
     }
 
     if (strokes.length === 0) return "";
@@ -64,7 +67,11 @@ export default function CreatePage() {
   useEffect(() => {
     if (inputMode !== "type") return;
     let active = true;
-    setTypeLoading(true);
+    let pending = true;
+    const raf = requestAnimationFrame(() => {
+      if (active && pending) setTypeLoading(true);
+    });
+
     convertTextToSignature(typedText, fontName, { split: "glyph" })
       .then((result) => {
         if (!active) return;
@@ -77,11 +84,13 @@ export default function CreatePage() {
         setTypeViewBox("0 0 300 120");
       })
       .finally(() => {
+        pending = false;
         if (active) setTypeLoading(false);
       });
 
     return () => {
       active = false;
+      cancelAnimationFrame(raf);
     };
   }, [typedText, fontName, inputMode]);
 

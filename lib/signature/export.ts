@@ -67,6 +67,7 @@ export type MotionExportOptions = {
   duration?: number;
   easing?: string;
   animationMode?: AnimationMode;
+  renderStyle?: "stroke" | "fill";
 };
 
 // ─── Per-stroke timing (cumulative delays) ───────────────────────────────────
@@ -198,6 +199,79 @@ function generateFillMode(paths: string[], timing: Array<{ duration: number; del
   ].join("\n");
 }
 
+function parseViewBox(viewBox: string) {
+  const [x, y, w, h] = viewBox.split(/\s+/).map((v) => Number.parseFloat(v));
+  return {
+    x: Number.isFinite(x) ? x : 0,
+    y: Number.isFinite(y) ? y : 0,
+    w: Number.isFinite(w) ? w : 300,
+    h: Number.isFinite(h) ? h : 120,
+  };
+}
+
+function generateFillTextMode(paths: string[], opts: Required<MotionExportOptions>, viewBox: string): string {
+  const { x, y, w, h } = parseViewBox(viewBox);
+  const maskId = `${opts.componentName}-mask`;
+
+  const basePaths = paths
+    .map(
+      (path) =>
+        [
+          `      <path`,
+          `        d="${path}"`,
+          `        fill="${opts.baseStrokeColor}"`,
+          `        fillOpacity={${opts.baseStrokeOpacity}}`,
+          `      />`,
+        ].join("\n")
+    )
+    .join("\n");
+
+  const fillPaths = paths
+    .map(
+      (path) =>
+        [
+          `      <path`,
+          `        d="${path}"`,
+          `        fill="${opts.strokeColor}"`,
+          `      />`,
+        ].join("\n")
+    )
+    .join("\n");
+
+  return [
+    `import { motion } from "motion/react";`,
+    ``,
+    `export function ${opts.componentName}() {`,
+    `  return (`,
+    `    <motion.svg`,
+    `      viewBox="${viewBox}"`,
+    `      fill="none"`,
+    `      xmlns="http://www.w3.org/2000/svg"`,
+    `    >`,
+    `      <mask id="${maskId}">`,
+    `        <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="black" />`,
+    `        <motion.rect`,
+    `          x="${x}"`,
+    `          y="${y}"`,
+    `          width="${w}"`,
+    `          height="${h}"`,
+    `          fill="white"`,
+    `          initial={{ width: 0 }}`,
+    `          animate={{ width: ${w} }}`,
+    `          transition={{ duration: ${opts.duration}, ease: "${opts.easing}" }}`,
+    `        />`,
+    `      </mask>`,
+    opts.animationMode === "fill" ? basePaths : "",
+    `      <g mask="url(#${maskId})">`,
+    fillPaths,
+    `      </g>`,
+    `    </motion.svg>`,
+    `  );`,
+    `}`,
+    ``,
+  ].filter(Boolean).join("\n");
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export function generateMotionComponent(strokes: Stroke[], options: MotionExportOptions = {}): string {
@@ -214,6 +288,7 @@ export function generateMotionComponent(strokes: Stroke[], options: MotionExport
     duration: options.duration ?? 2.6,
     easing: options.easing ?? "easeOut",
     animationMode: options.animationMode ?? "draw",
+    renderStyle: options.renderStyle ?? "stroke",
   };
 
   const viewBox = bounds ? `${bounds.minX.toFixed(2)} ${bounds.minY.toFixed(2)} ${(bounds.maxX - bounds.minX).toFixed(2)} ${(bounds.maxY - bounds.minY).toFixed(2)}` : "0 0 300 120";
@@ -241,7 +316,12 @@ export function generateMotionComponentFromPaths(
     duration: options.duration ?? 2.6,
     easing: options.easing ?? "easeOut",
     animationMode: options.animationMode ?? "draw",
+    renderStyle: options.renderStyle ?? "stroke",
   };
+
+  if (opts.renderStyle === "fill") {
+    return generateFillTextMode(paths, opts, viewBox);
+  }
 
   const timing = buildPathTiming(paths, opts.duration);
   return opts.animationMode === "fill" ? generateFillMode(paths, timing, opts, viewBox) : generateDrawMode(paths, timing, opts, viewBox);

@@ -27,7 +27,7 @@ const STROKE_COLOR = "#F7F5F3";
 const BASE_STROKE_COLOR = "#6E665F";
 const BASE_STROKE_OPACITY = 0.45;
 const STROKE_WIDTH = 1.6;
-const DURATION = 2.6;
+const DURATION = 4.0;
 const EASING = "easeOut";
 
 function buildStrokeTiming(count: number, strokes: Stroke[], totalDuration: number): Array<{ duration: number; delay: number }> {
@@ -73,30 +73,70 @@ function LivePreview({ strokes, paths, viewBox, animationMode, replayKey }: Live
     ? buildStrokeTiming(resolvedPaths.length, strokes, DURATION)
     : buildPathTiming(resolvedPaths.length, DURATION);
 
+  const renderStyle = paths ? "fill" : "stroke";
+
   return (
     <motion.svg key={replayKey} viewBox={resolvedViewBox} fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
-      {resolvedPaths.map((path, i) => {
-        const { duration, delay } = timing[i];
-        return (
-          <g key={i}>
-            {animationMode === "fill" && <path d={path} fill="none" stroke={BASE_STROKE_COLOR} strokeWidth={STROKE_WIDTH} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={BASE_STROKE_OPACITY} />}
-            <motion.path
-              d={path}
-              fill="none"
-              stroke={STROKE_COLOR}
-              strokeWidth={STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{
-                pathLength: { duration, ease: EASING, delay },
-                opacity: { duration: 0.01, delay },
-              }}
-            />
+      {renderStyle === "fill" ? (
+        <>
+          <mask id={`preview-mask-${replayKey}`}>
+            {(() => {
+              const [x, y, w, h] = resolvedViewBox.split(/\s+/).map((v) => Number.parseFloat(v));
+              const rx = Number.isFinite(x) ? x : 0;
+              const ry = Number.isFinite(y) ? y : 0;
+              const rw = Number.isFinite(w) ? w : 300;
+              const rh = Number.isFinite(h) ? h : 120;
+              return (
+                <>
+                  <rect x={rx} y={ry} width={rw} height={rh} fill="black" />
+                  <motion.rect
+                    x={rx}
+                    y={ry}
+                    width={rw}
+                    height={rh}
+                    fill="white"
+                    initial={{ width: 0 }}
+                    animate={{ width: rw }}
+                    transition={{ duration: DURATION, ease: EASING }}
+                  />
+                </>
+              );
+            })()}
+          </mask>
+          {animationMode === "fill" &&
+            resolvedPaths.map((path, i) => (
+              <path key={`base-${i}`} d={path} fill={BASE_STROKE_COLOR} fillOpacity={BASE_STROKE_OPACITY} />
+            ))}
+          <g mask={`url(#preview-mask-${replayKey})`}>
+            {resolvedPaths.map((path, i) => (
+              <path key={`fill-${i}`} d={path} fill={STROKE_COLOR} />
+            ))}
           </g>
-        );
-      })}
+        </>
+      ) : (
+        resolvedPaths.map((path, i) => {
+          const { duration, delay } = timing[i];
+          return (
+            <g key={i}>
+              {animationMode === "fill" && <path d={path} fill="none" stroke={BASE_STROKE_COLOR} strokeWidth={STROKE_WIDTH} strokeLinecap="round" strokeLinejoin="round" strokeOpacity={BASE_STROKE_OPACITY} />}
+              <motion.path
+                d={path}
+                fill="none"
+                stroke={STROKE_COLOR}
+                strokeWidth={STROKE_WIDTH}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{
+                  pathLength: { duration, ease: EASING, delay },
+                  opacity: { duration: 0.01, delay },
+                }}
+              />
+            </g>
+          );
+        })
+      )}
     </motion.svg>
   );
 }
