@@ -43,4 +43,4 @@ MIT
 
 ---
 
-Made with ❤️ by [BroKarim](https://github.com/BroKarim)
+Made with ❤️ by [BroKarim](https://github.com/BroKarim) & [codex](https://github.com/openai/codex)
