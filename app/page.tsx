@@ -1,6 +1,12 @@
 // source : https://v0.app/chat/brillance-saa-s-landing-page-MnU0SoHnZec
 
+import type { Metadata } from "next";
 import { SignatureMotion } from "@/components/mysignature";
+
+export const metadata: Metadata = {
+  title: "Signature Motion Builder",
+  description: "Craft animated signatures from canvas strokes or typed fonts, ready to export as React motion components.",
+};
 import { GetStartedButton } from "@/components/get-started";
 export default function LandingPage() {
   return (
